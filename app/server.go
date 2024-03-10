@@ -9,29 +9,48 @@ import (
 func main() {
 	fmt.Println("Logs from your program will appear here!")
 
-  listener, err := net.Listen("tcp", "0.0.0.0:6379")
-  exitOn(err, "Failed to bind to port 6379")
+	listener, err := net.Listen("tcp", "0.0.0.0:6379")
+	if err != nil {
+		printError(err, "Failed to bind to port 6379")
+		os.Exit(1)
+	}
 
-  var connection net.Conn
-  connection, err = listener.Accept()
-  fmt.Println("HEEERE")
+	defer listener.Close()
 
-  message := make([]byte, 1024)
-  messageBytes, err := connection.Read(message)
-  exitOn(err, "Error reading data from the connection")
-  fmt.Printf("Received '%s'\n", string(message[:messageBytes]))
+	var connection net.Conn
+	connection, err = listener.Accept()
+	if err != nil {
+		printError(err, "Error accepting connection")
+		os.Exit(1)
+	}
 
-  response := []byte("+PONG\r\n")
-  bytes, err := connection.Write(response)
-  exitOn(err, "Error sending data to the connection")
-  fmt.Printf("Send %v bytes\n", bytes)
-
-  exitOn(err, "Error accepting connection")
+	handleConnection(connection)
 }
 
-func exitOn(err error, msg string) {
-  if err != nil {
-    fmt.Printf("%s: %v", msg, err.Error())
-    os.Exit(1)
-  }
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+
+	for {
+		message := make([]byte, 1024)
+		messageBytes, err := conn.Read(message)
+		if err != nil {
+			printError(err, "Error reading data from the conn")
+			return
+		}
+
+		fmt.Printf("Received '%s'\n", string(message[:messageBytes]))
+
+		response := []byte("+PONG\r\n")
+		bytes, err := conn.Write(response)
+		if err != nil {
+			printError(err, "Error sending data to the connection")
+			return
+		}
+
+		fmt.Printf("Send %v bytes\n", bytes)
+	}
+}
+
+func printError(err error, msg string) {
+	fmt.Printf("%s: %v", msg, err.Error())
 }
