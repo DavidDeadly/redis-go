@@ -5,6 +5,9 @@ import (
 	"io"
 	"net"
 	"os"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 func main() {
@@ -32,12 +35,12 @@ func main() {
 }
 
 func handleConnection(conn net.Conn) {
-  fmt.Println("Handling...")
+	fmt.Println("Handling...")
 	defer conn.Close()
 
 	for {
-		message := make([]byte, 1024)
-		messageBytes, err := conn.Read(message)
+		request := make([]byte, 1024)
+		reqBytes, err := conn.Read(request)
 		if err == io.EOF {
 			break
 		}
@@ -46,10 +49,13 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 
-		fmt.Printf("Received '%s'\n", string(message[:messageBytes]))
+    var message []string = parseRedisProtocolRequest(string(request[:reqBytes]))
+
+    fmt.Println("Message received: ", message)
 
 		response := []byte("+PONG\r\n")
-		bytes, err := conn.Write(response)
+    bytes, err := conn.Write(response)
+
 		if err != nil {
 			printError(err, "Error sending data to the connection")
 			return
@@ -57,6 +63,33 @@ func handleConnection(conn net.Conn) {
 
 		fmt.Printf("Send %v bytes\n", bytes)
 	}
+}
+
+func parseRedisProtocolRequest(request string) []string {
+	places := strings.Fields(request)
+
+	regex := regexp.MustCompile(`[\$\*]\d+`)
+
+  numElements, err := strconv.Atoi(places[0][1:])
+
+  if err != nil {
+    fmt.Println("error parsing redis-cli message")
+
+    return []string{}
+  }
+
+	parsedMessage := make([]string, 0, numElements)
+
+	for _, data := range places {
+		matches := regex.MatchString(data)
+
+		if !matches {
+      upperString := strings.ToUpper(data)
+      parsedMessage = append(parsedMessage, upperString)
+		}
+	}
+
+  return parsedMessage
 }
 
 func printError(err error, msg string) {
