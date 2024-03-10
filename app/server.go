@@ -10,6 +10,22 @@ import (
 	"strings"
 )
 
+type CommandHandler func (params []string) []byte
+
+var commandHandlers = map[string]CommandHandler{
+
+  "PING": func(params []string) []byte {
+		return []byte("+PONG\r\n")
+  },
+
+  "ECHO": func(params []string) []byte {
+    message := strings.Join(params, " ")
+		response := []byte(fmt.Sprintf("+%s\r\n", message))
+
+    return response
+  },
+}
+
 func main() {
 	fmt.Println("Logs from your program will appear here!")
 
@@ -49,11 +65,11 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 
-    var message []string = parseRedisProtocolRequest(string(request[:reqBytes]))
+    command, params := parseRedisProtocolRequest(string(request[:reqBytes]))
 
-    fmt.Println("Message received: ", message)
+    fmt.Printf("Command: '%s', Params: '%s'\n", command, params)
 
-		response := []byte("+PONG\r\n")
+		response := commandHandlers[command](params)
     bytes, err := conn.Write(response)
 
 		if err != nil {
@@ -65,17 +81,15 @@ func handleConnection(conn net.Conn) {
 	}
 }
 
-func parseRedisProtocolRequest(request string) []string {
+func parseRedisProtocolRequest(request string) (string, []string) {
 	places := strings.Fields(request)
-
 	regex := regexp.MustCompile(`[\$\*]\d+`)
-
   numElements, err := strconv.Atoi(places[0][1:])
 
   if err != nil {
     fmt.Println("error parsing redis-cli message")
 
-    return []string{}
+    return "DEFAULT", []string{}
   }
 
 	parsedMessage := make([]string, 0, numElements)
@@ -84,12 +98,18 @@ func parseRedisProtocolRequest(request string) []string {
 		matches := regex.MatchString(data)
 
 		if !matches {
-      upperString := strings.ToUpper(data)
-      parsedMessage = append(parsedMessage, upperString)
+      parsedMessage = append(parsedMessage, data)
 		}
 	}
 
-  return parsedMessage
+  if len(parsedMessage) == 0 {
+    fmt.Println("error getting the command and params from the request, none of them")
+    return "DEFAULT", []string{}
+  }
+
+  command := strings.ToUpper(parsedMessage[0])
+
+  return command, parsedMessage[1:]
 }
 
 func printError(err error, msg string) {
