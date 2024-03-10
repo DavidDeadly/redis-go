@@ -12,7 +12,20 @@ func main() {
   listener, err := net.Listen("tcp", "0.0.0.0:6379")
   exitOn(err, "Failed to bind to port 6379")
 
-  _,  err = listener.Accept()
+  var connection net.Conn
+  connection, err = listener.Accept()
+  fmt.Println("HEEERE")
+
+  message := make([]byte, 1024)
+  messageBytes, err := connection.Read(message)
+  exitOn(err, "Error reading data from the connection")
+  fmt.Printf("Received '%s'\n", string(message[:messageBytes]))
+
+  response := []byte("+PONG\r\n")
+  bytes, err := connection.Write(response)
+  exitOn(err, "Error sending data to the connection")
+  fmt.Printf("Send %v bytes\n", bytes)
+
   exitOn(err, "Error accepting connection")
 }
 
