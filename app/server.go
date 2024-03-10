@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
 )
@@ -17,22 +18,29 @@ func main() {
 
 	defer listener.Close()
 
-	var connection net.Conn
-	connection, err = listener.Accept()
-	if err != nil {
-		printError(err, "Error accepting connection")
-		os.Exit(1)
-	}
+	for {
+		var connection net.Conn
+		connection, err = listener.Accept()
+		if err != nil {
+			printError(err, "Error accepting connection")
+			os.Exit(1)
+		}
 
-	handleConnection(connection)
+		fmt.Println("\nNew connection")
+		go handleConnection(connection)
+	}
 }
 
 func handleConnection(conn net.Conn) {
+  fmt.Println("Handling...")
 	defer conn.Close()
 
 	for {
 		message := make([]byte, 1024)
 		messageBytes, err := conn.Read(message)
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
 			printError(err, "Error reading data from the conn")
 			return
@@ -52,5 +60,5 @@ func handleConnection(conn net.Conn) {
 }
 
 func printError(err error, msg string) {
-	fmt.Printf("%s: %v", msg, err.Error())
+	fmt.Printf("%s: %v\n\n", msg, err.Error())
 }
