@@ -85,7 +85,7 @@ func SimpleString(message string) []byte {
 }
 
 func parseRedisProtocolRequest(request string) (string, []string) {
-	places := strings.Fields(request)
+	places := strings.Split(request, "\r\n")
 	regex := regexp.MustCompile(`[\$\*]\d+`)
   numElements, err := strconv.Atoi(places[0][1:])
 
