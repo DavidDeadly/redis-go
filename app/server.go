@@ -14,15 +14,14 @@ type CommandHandler func (params []string) []byte
 
 var commandHandlers = map[string]CommandHandler{
 
-  "PING": func(params []string) []byte {
-		return []byte("+PONG\r\n")
+  "PING": func(_ []string) []byte {
+		return SimpleString("PONG")
   },
 
   "ECHO": func(params []string) []byte {
     message := strings.Join(params, " ")
-		response := []byte(fmt.Sprintf("+%s\r\n", message))
 
-    return response
+    return SimpleString(message)
   },
 }
 
@@ -79,6 +78,10 @@ func handleConnection(conn net.Conn) {
 
 		fmt.Printf("Send %v bytes\n", bytes)
 	}
+}
+
+func SimpleString(message string) []byte {
+  return []byte(fmt.Sprintf("+%s\r\n", message))
 }
 
 func parseRedisProtocolRequest(request string) (string, []string) {
