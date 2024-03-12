@@ -121,7 +121,9 @@ func BulkString(message *string) []byte {
 }
 
 func parseRedisProtocolRequest(request string) (string, []string) {
-	places := strings.Split(request, "\r\n")
+  places := strings.Split(request, "\r\n")
+  places = places[:len(places) - 1]
+
 	regex := regexp.MustCompile(`[\$\*]\d+`)
   numElements, err := strconv.Atoi(places[0][1:])
 
