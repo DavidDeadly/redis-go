@@ -40,17 +40,16 @@ var commandHandlers = map[string]CommandHandler{
 
 		key, value := params[0], params[1]
 
-		px := strings.ToUpper(params[2])
-		expireTime, _ := strconv.Atoi(params[3])
+		arg1 := strings.ToUpper(params[2])
+    param1 := params[3]
 
-		if expireTime != 0 {
-			fmt.Println("Px: ", px, " Time: ", expireTime)
-			fmt.Println(params)
-      
-      go Expire(key, expireTime, Expiry)
+    if arg1 == "PX" {
+      expireTime, _ := strconv.Atoi(param1)
 
-      fmt.Println("\nBLOCKED??")
-		}
+      if expireTime != 0 {
+        go Expire(key, expireTime, Expiry)
+      }
+    }
 
 		Data[key] = value
 
