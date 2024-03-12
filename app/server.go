@@ -10,18 +10,46 @@ import (
 	"strings"
 )
 
-type CommandHandler func (params []string) []byte
+const (
+  OK = "OK"
+  PONG = "PONG"
+  NOT_FOUND = "$-1\r\n"
+)
 
+var Data = map[string]string{}
+
+type CommandHandler func (params []string) []byte
 var commandHandlers = map[string]CommandHandler{
 
   "PING": func(_ []string) []byte {
-		return SimpleString("PONG")
+		return SimpleString(PONG)
   },
 
   "ECHO": func(params []string) []byte {
     message := strings.Join(params, " ")
 
     return SimpleString(message)
+  },
+
+  "SET": func(params []string) []byte {
+    key, value := params[0], params[1]
+
+    Data[key] = value
+
+    return SimpleString(OK)
+  },
+
+  "GET": func(params []string) []byte {
+    key := params[0]
+
+    value, ok := Data[key]
+
+    if !ok {
+      var msg *string
+      return BulkString(msg)
+    }
+
+    return SimpleString(value)
   },
 }
 
@@ -82,6 +110,14 @@ func handleConnection(conn net.Conn) {
 
 func SimpleString(message string) []byte {
   return []byte(fmt.Sprintf("+%s\r\n", message))
+}
+
+func BulkString(message *string) []byte {
+  if message == nil {
+    return []byte(NOT_FOUND)
+  }
+
+  return []byte(fmt.Sprintf("$%d\r\n%s\r\n", len(*message), *message))
 }
 
 func parseRedisProtocolRequest(request string) (string, []string) {
