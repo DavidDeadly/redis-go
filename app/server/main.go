@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -68,7 +69,7 @@ func handleConnection(conn net.Conn) {
     } else {
       message := fmt.Sprintf("We currently do not support a command called '%s', sorry...", command)
 
-      response = utils.SimpleString(message)
+      response = utils.SimpleError(errors.New(message))
     }
 
 		bytes, err := conn.Write(response)
