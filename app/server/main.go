@@ -59,7 +59,18 @@ func handleConnection(conn net.Conn) {
 
 		fmt.Printf("Command: '%s', Params: '%s'\n", command, params)
 
-		response := handlers.CommandHandlers[command](params)
+		handler, ok := handlers.CommandHandlers[command]
+
+    var response []byte
+
+    if ok {
+      response = handler(params)
+    } else {
+      message := fmt.Sprintf("We currently do not support a command called '%s', sorry...", command)
+
+      response = utils.SimpleString(message)
+    }
+
 		bytes, err := conn.Write(response)
 		if err != nil {
 			utils.PrintError(err, "Error sending data to the connection")
