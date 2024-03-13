@@ -85,7 +85,7 @@ var CommandHandlers = map[string]CommandHandler{
         return utils.BulkString(nil)
       }
 
-      return utils.SimpleString(value)
+      return utils.RespArray([]string{key, value})
     } else {
       message = fmt.Sprintf("The '%s' sub-action is not supported for the CONFIG command.", action)
       return utils.SimpleError(errors.New(message))

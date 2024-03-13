@@ -20,7 +20,7 @@ func StartServerOn(port string) net.Listener {
 		os.Exit(1)
 	}
 
-  fmt.Printf("Server running on PORT: %s", port)
+  fmt.Printf("Server running on PORT: %s\n", port)
 
   return listener
 }

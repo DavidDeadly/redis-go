@@ -29,6 +29,16 @@ func BulkString(message *string) []byte {
 	return []byte(fmt.Sprintf("$%d\r\n%s\r\n", len(*message), *message))
 }
 
+func RespArray(message []string) []byte {
+  response := fmt.Sprintf("*%d\r\n", len(message))
+
+  for _, word := range message {
+    response += string(BulkString(&word))
+  }
+
+	return []byte(response)
+}
+
 func ParseRedisProtocolRequest(request string) (string, []string) {
 	places := strings.Split(request, "\r\n")
 	places = places[:len(places)-1]
