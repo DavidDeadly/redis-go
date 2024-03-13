@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/codecrafters-io/redis-starter-go/app/config"
 	"github.com/codecrafters-io/redis-starter-go/app/utils"
 )
 
@@ -53,12 +55,42 @@ var CommandHandlers = map[string]CommandHandler{
 		value, ok := Data[key]
 
 		if !ok {
-			var msg *string
-			return utils.BulkString(msg)
+			return utils.BulkString(nil)
 		}
 
 		return utils.SimpleString(value)
 	},
+
+  "CONFIG": func(params []string) []byte {
+    var message string
+    numParams := len(params)
+    if(numParams == 0) {
+      message = "The CONFIG command needs a sub-action."
+      return utils.SimpleError(errors.New(message))
+    }
+
+    action := strings.ToUpper(params[0])
+
+    if action == "GET" {
+      if numParams <= 1 {
+        message = "The CONFIG GET command needs a key to search for"
+        return utils.SimpleError(errors.New(message))
+      }
+
+      key := strings.ToLower(params[1])
+
+      value, ok := config.CONFIG[key]
+
+      if !ok {
+        return utils.BulkString(nil)
+      }
+
+      return utils.SimpleString(value)
+    } else {
+      message = fmt.Sprintf("The '%s' sub-action is not supported for the CONFIG command.", action)
+      return utils.SimpleError(errors.New(message))
+    }
+  },
 }
 
 func Expire(key string, timeMs int, channel chan string) {

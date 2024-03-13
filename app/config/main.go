@@ -2,18 +2,23 @@ package config
 
 import (
 	"flag"
-	"fmt"
 )
 
-var DIR string
-var DB_FILENAME string
+const (
+	DIR         = "dir"
+	DB_FILENAME = "dbfilename"
+)
+
+var CONFIG = map[string]string{}
 
 func Config() {
-	flag.StringVar(&DIR, "dir", "/home/daviddeadly/redis-go", "Provide a directory where RDB files will be stored")
-	flag.StringVar(&DB_FILENAME, "dbfilename", "redis-go.rdb", "Provide the name of the RDB file")
+	var dir, dbFilename string
+
+	flag.StringVar(&dir, "dir", "/home/daviddeadly/redis-go", "Provide a directory where RDB files will be stored")
+	flag.StringVar(&dbFilename, "dbfilename", "redis-go.rdb", "Provide the name of the RDB file")
 
 	flag.Parse()
 
-	fmt.Println("dir: ", DIR)
-	fmt.Println("dbFilename: ", DB_FILENAME)
+	CONFIG[DIR] = dir
+	CONFIG[DB_FILENAME] = dbFilename
 }
