@@ -11,8 +11,10 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/utils"
 )
 
-var Expiry = make(chan string)
-var Data = map[string]string{}
+var (
+	Expiry = make(chan string)
+	Data   = map[string]string{}
+)
 
 type CommandHandler func(params []string) []byte
 
@@ -34,15 +36,15 @@ var CommandHandlers = map[string]CommandHandler{
 		key, value := params[0], params[1]
 
 		arg1 := strings.ToUpper(params[2])
-    param1 := params[3]
+		param1 := params[3]
 
-    if arg1 == "PX" {
-      expireTime, _ := strconv.Atoi(param1)
+		if arg1 == "PX" {
+			expireTime, _ := strconv.Atoi(param1)
 
-      if expireTime != 0 {
-        go Expire(key, expireTime, Expiry)
-      }
-    }
+			if expireTime != 0 {
+				go Expire(key, expireTime, Expiry)
+			}
+		}
 
 		Data[key] = value
 
@@ -61,36 +63,38 @@ var CommandHandlers = map[string]CommandHandler{
 		return utils.SimpleString(value)
 	},
 
-  "CONFIG": func(params []string) []byte {
-    var message string
-    numParams := len(params)
-    if(numParams == 0) {
-      message = "The CONFIG command needs a sub-action."
-      return utils.SimpleError(errors.New(message))
-    }
+	"CONFIG": func(params []string) []byte {
+		var message string
+		numParams := len(params)
+		if numParams == 0 {
+			message = "The CONFIG command needs a sub-action."
+			return utils.SimpleError(errors.New(message))
+		}
 
-    action := strings.ToUpper(params[0])
+		action := strings.ToUpper(params[0])
 
-    if action == "GET" {
-      if numParams <= 1 {
-        message = "The CONFIG GET command needs a key to search for"
-        return utils.SimpleError(errors.New(message))
-      }
+		switch action {
+		case "GET":
+			if numParams <= 1 {
+				message = "The CONFIG GET command needs a key to search for"
+				return utils.SimpleError(errors.New(message))
+			}
 
-      key := strings.ToLower(params[1])
+			key := strings.ToLower(params[1])
 
-      value, ok := config.CONFIG[key]
+			value, ok := config.CONFIG[key]
 
-      if !ok {
-        return utils.BulkString(nil)
-      }
+			if ok {
+				return utils.RespArray([]string{key, value})
+			}
+		default:
+			message = fmt.Sprintf("The '%s' sub-action is not supported for the CONFIG command.", action)
 
-      return utils.RespArray([]string{key, value})
-    } else {
-      message = fmt.Sprintf("The '%s' sub-action is not supported for the CONFIG command.", action)
-      return utils.SimpleError(errors.New(message))
-    }
-  },
+			return utils.SimpleError(errors.New(message))
+		}
+
+		return utils.RespArray([]string{})
+	},
 }
 
 func Expire(key string, timeMs int, channel chan string) {
